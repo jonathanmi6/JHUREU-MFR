@@ -1,0 +1,2 @@
+msg = "hell"
+print(msg)
