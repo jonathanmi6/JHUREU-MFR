@@ -23,6 +23,7 @@ from Constants import *
 # Initialize PortHandler instance & Set the port path
 portHandler = PortHandler(DEVICENAME)
 
+
 # Initialize PacketHandler instance & Set the protocol version
 packetHandler = PacketHandler(PROTOCOL_VERSION)
 
@@ -52,6 +53,7 @@ def enableTorque(id):
     dxl_comm_result, dxl_error = packetHandler.write1ByteTxRx(portHandler, id, XL_TORQUE_ENABLE, TORQUE_ENABLE)
     if dxl_comm_result != COMM_SUCCESS:
         print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+        quit()
     elif dxl_error != 0:
         print("%s" % packetHandler.getRxPacketError(dxl_error))
     else:
@@ -61,6 +63,7 @@ def disableTorque(id):
     dxl_comm_result, dxl_error = packetHandler.write1ByteTxRx(portHandler, id, XL_TORQUE_ENABLE, TORQUE_DISABLE)
     if dxl_comm_result != COMM_SUCCESS:
         print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+        quit()
     elif dxl_error != 0:
         print("%s" % packetHandler.getRxPacketError(dxl_error))
     else:
@@ -83,6 +86,19 @@ def getPos(id):
     elif dxl_error != 0:
         print("%s" % packetHandler.getRxPacketError(dxl_error))
 
+
+    # ------- Eric Lara's patch for a read bug (error with negative integers) -----------
+    dxl_present_16Byte_1 = (currPos & 0xFFFF)
+    dxl_present_16Byte_2 = (currPos >> 16) & 0xFFFF
+
+    # print('[%s, %s]' % (dxl_present_16Byte_1, dxl_present_16Byte_2) )
+
+    if dxl_present_16Byte_1 < dxl_present_16Byte_2:
+        multiply  = 65535 - dxl_present_16Byte_2
+        currPos = (dxl_present_16Byte_1 - 65535) - multiply*65535
+
+	# -------------------------------------------------------------------------
+
     return currPos
 
 def moveMotorPos(id, pos):
@@ -104,26 +120,57 @@ def moveWings(lPos, rPos):
     moveMotorPos(R_WING_ID, rPos)
     return (atPosition(lPos, getPos(L_WING_ID)) and atPosition(rPos, getPos(R_WING_ID)))
 
+def moveLegsFromHome(pos):
+    moveMotorPos(RF_LEG_ID, RF_LEG_HOME - pos)
+    moveMotorPos(RM_LEG_ID, RM_LEG_HOME - pos)
+    moveMotorPos(RB_LEG_ID, RB_LEG_HOME - pos)
+    moveMotorPos(LF_LEG_ID, LF_LEG_HOME + pos)
+    moveMotorPos(LM_LEG_ID, LM_LEG_HOME + pos)
+    moveMotorPos(LB_LEG_ID, LB_LEG_HOME + pos)
+    return (atPosition(RF_LEG_HOME - pos, getPos(RF_LEG_ID)) and atPosition(LF_LEG_HOME + pos, getPos(LF_LEG_ID)))
+
+def moveLegsOffset(pos):
+    moveMotorPos(RF_LEG_ID, RF_LEG_HOME - pos)
+    moveMotorPos(RM_LEG_ID, RM_LEG_HOME - LEG_OFFSET - pos)
+    moveMotorPos(RB_LEG_ID, RB_LEG_HOME - pos)
+    moveMotorPos(LF_LEG_ID, LF_LEG_HOME + LEG_OFFSET + pos)
+    moveMotorPos(LM_LEG_ID, LM_LEG_HOME + pos)
+    moveMotorPos(LB_LEG_ID, LB_LEG_HOME + LEG_OFFSET + pos)
+    return (atPosition(RF_LEG_HOME - pos, getPos(RF_LEG_ID)) and atPosition(LF_LEG_HOME + LEG_OFFSET + pos, getPos(LF_LEG_ID)))
+
+def offsetLegsFromHome():
+    moveMotorPos(RF_LEG_ID, RF_LEG_HOME)
+    moveMotorPos(RM_LEG_ID, RM_LEG_HOME - LEG_OFFSET)
+    moveMotorPos(RB_LEG_ID, RB_LEG_HOME)
+    moveMotorPos(LF_LEG_ID, LF_LEG_HOME + LEG_OFFSET)
+    moveMotorPos(LM_LEG_ID, LM_LEG_HOME)
+    moveMotorPos(LB_LEG_ID, LB_LEG_HOME + LEG_OFFSET)
+
+    while not (atPosition(RF_LEG_HOME, getPos(RF_LEG_ID)) and atPosition(LF_LEG_HOME + LEG_OFFSET, getPos(LF_LEG_ID))):
+        print("Offsetting Legs", RF_LEG_HOME, getPos(RF_LEG_ID), LF_LEG_HOME + LEG_OFFSET, getPos(LF_LEG_ID))
+        time.sleep(0.01)
+
+
 
 def enableAll():
-    enableTorque(R_F_LEG_ID)
-    enableTorque(R_M_LEG_ID)
-    enableTorque(R_B_LEG_ID)
-    enableTorque(L_F_LEG_ID)
-    enableTorque(L_M_LEG_ID)
-    enableTorque(L_B_LEG_ID)
+    enableTorque(RF_LEG_ID)
+    enableTorque(RM_LEG_ID)
+    enableTorque(RB_LEG_ID)
+    enableTorque(LF_LEG_ID)
+    enableTorque(LM_LEG_ID)
+    enableTorque(LB_LEG_ID)
     enableTorque(TAIL_YAW_ID)
     enableTorque(TAIL_PITCH_ID)
     enableTorque(R_WING_ID)
     enableTorque(L_WING_ID)
 
 def disableAll():
-    disableTorque(R_F_LEG_ID)
-    disableTorque(R_M_LEG_ID)
-    disableTorque(R_B_LEG_ID)
-    disableTorque(L_F_LEG_ID)
-    disableTorque(L_M_LEG_ID)
-    disableTorque(L_B_LEG_ID)
+    disableTorque(RF_LEG_ID)
+    disableTorque(RM_LEG_ID)
+    disableTorque(RB_LEG_ID)
+    disableTorque(LF_LEG_ID)
+    disableTorque(LM_LEG_ID)
+    disableTorque(LB_LEG_ID)
     disableTorque(TAIL_PITCH_ID)
     disableTorque(TAIL_YAW_ID)
     disableTorque(R_WING_ID)
