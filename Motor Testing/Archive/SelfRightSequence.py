@@ -30,7 +30,7 @@ XL_PRESENT_POSITION = 132
 
 # Data Byte Length
 LEN_XL_GOAL_POSITION = 4
-LEN_XL_PRESENT_POSITION = 4
+XL_PRESENT_POSITION_LEN = 4
 
 # Protocol version
 PROTOCOL_VERSION = 2.0               # See which protocol version is used in the Dynamixel
@@ -81,7 +81,7 @@ packetHandler = PacketHandler(PROTOCOL_VERSION)
 groupSyncWrite = GroupSyncWrite(portHandler, packetHandler, XL_GOAL_POSITION, LEN_XL_GOAL_POSITION)
 
 # Initialize GroupSyncRead instace for Present Position
-groupSyncRead = GroupSyncRead(portHandler, packetHandler, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
+groupSyncRead = GroupSyncRead(portHandler, packetHandler, XL_PRESENT_POSITION, XL_PRESENT_POSITION_LEN)
 
 # Open port
 if portHandler.openPort():
@@ -148,22 +148,24 @@ def atPosition(goal, curr):
 
 def getPos(id):
     #Check if groupsyncread data of Dynamixel is available
-    dxl_getdata_result = groupSyncRead.isAvailable(id, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
-    if dxl_getdata_result != True:
-        print("getPos Error: [ID:%03d] groupSyncRead getdata failed" % id)
-        quit()
-        
+    # dxl_getdata_result = groupSyncRead.isAvailable(id, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
+    # if dxl_getdata_result != True:
+    #     print("getPos Error: [ID:%03d] groupSyncRead getdata failed" % id)
+    #     quit()
+
     dxl_comm_result = groupSyncRead.txRxPacket()
     if dxl_comm_result != COMM_SUCCESS:
         print("getPos Error: %s" % packetHandler.getTxRxResult(dxl_comm_result))
-    currPos = groupSyncRead.getData(id, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
+
+    currPos = groupSyncRead.getData(id, XL_PRESENT_POSITION, XL_PRESENT_POSITION_LEN)
     return currPos
 
 def moveMotor(id, pos):
     addParamWrite(id, pos)
-    syncWriteGoal()
-    groupSyncWrite.clearParam()
-    return atPosition(pos, getPos(id))
+    # syncWriteGoal()
+    # groupSyncWrite.clearParam()
+    # currPos = getPos(id)
+    # return atPosition(pos, currPos)
 
 def moveMotors(rWingGoal, lWingGoal, tailYawGoal, tailPitchGoal):
     # while 1:
@@ -192,10 +194,10 @@ def moveMotors(rWingGoal, lWingGoal, tailYawGoal, tailPitchGoal):
                 print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
 
             # Get position values
-            rWingCurrPos = groupSyncRead.getData(R_WING_ID, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
-            lWingCurrPos = groupSyncRead.getData(L_WING_ID, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
-            tailYawCurrPos = groupSyncRead.getData(TAIL_YAW_ID, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
-            tailPitchCurrPos = groupSyncRead.getData(TAIL_PITCH_ID, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
+            rWingCurrPos = groupSyncRead.getData(R_WING_ID, XL_PRESENT_POSITION, XL_PRESENT_POSITION_LEN)
+            lWingCurrPos = groupSyncRead.getData(L_WING_ID, XL_PRESENT_POSITION, XL_PRESENT_POSITION_LEN)
+            tailYawCurrPos = groupSyncRead.getData(TAIL_YAW_ID, XL_PRESENT_POSITION, XL_PRESENT_POSITION_LEN)
+            tailPitchCurrPos = groupSyncRead.getData(TAIL_PITCH_ID, XL_PRESENT_POSITION, XL_PRESENT_POSITION_LEN)
 
             print("[ID:%03d] GoalPos:%03d  CurrPos:%03d\t[ID:%03d] GoalPos:%03d  CurrPos:%03d" % (R_WING_ID, rWingGoal, rWingCurrPos, L_WING_ID, lWingGoal, lWingCurrPos))
 
@@ -206,27 +208,38 @@ def moveMotors(rWingGoal, lWingGoal, tailYawGoal, tailPitchGoal):
             # break
 
 def moveTail(yawPos, pitchPos):
-    return (moveMotor(TAIL_YAW_ID, yawPos) and moveMotor(TAIL_PITCH_ID, pitchPos))
+    # return (moveMotor(TAIL_YAW_ID, yawPos) and moveMotor(TAIL_PITCH_ID, pitchPos))
+    addParamWrite(TAIL_YAW_ID, yawPos)
+    addParamWrite(TAIL_PITCH_ID, pitchPos)
+    syncWriteGoal()
+    groupSyncWrite.clearParam()
+    return (atPosition(yawPos, getPos(TAIL_YAW_ID)) and atPosition(pitchPos, getPos(TAIL_PITCH_ID)))
 
 def moveWings(lPos, rPos):
-    return (moveMotor(L_WING_ID, lPos) and moveMotor(R_WING_ID, rPos))
+    # return (moveMotor(L_WING_ID, lPos) and moveMotor(R_WING_ID, rPos))
+    addParamWrite(L_WING_ID, lPos)
+    addParamWrite(R_WING_ID, rPos)
+    syncWriteGoal()
+    groupSyncWrite.clearParam()
+    return (atPosition(lPos, getPos(L_WING_ID)) and atPosition(rPos, getPos(R_WING_ID)))
 
-#old movemotors function
+# old movemotors function
 # time.sleep(5)
 # moveMotors(R_WING_CLOSED, L_WING_CLOSED, TAIL_YAW_STRAIGHT, TAIL_PITCH_STRAIGHT)
 # moveMotors(R_WING_OPEN, L_WING_OPEN, TAIL_YAW_STRAIGHT, TAIL_PITCH_DOWN)
-# moveMotors(R_WING_OPEN, L_WING_OPEN, TAIL_YAW_RIGHT, TAIL_PITCH_DOWN)
+### moveMotors(R_WING_OPEN, L_WING_OPEN, TAIL_YAW_RIGHT, TAIL_PITCH_DOWN)
 # moveMotors(R_WING_OPEN, L_WING_OPEN, TAIL_YAW_LEFT, TAIL_PITCH_DOWN)
-# time.sleep(1)
+# time.sleep(0.5)
 # moveMotors(R_WING_OPEN, L_WING_OPEN, TAIL_YAW_STRAIGHT, TAIL_PITCH_STRAIGHT)
 # moveMotors(R_WING_CLOSED, L_WING_CLOSED, TAIL_YAW_STRAIGHT, TAIL_PITCH_STRAIGHT)
 
 #new moveMotor function
 # while not(moveMotor(R_WING_ID, R_WING_OPEN) and moveMotor(L_WING_ID, L_WING_CLOSED)):
-    # time.sleep(0.01)
+#     time.sleep(0.01)
 
+# moveTail and moveWings function
 while not(moveTail(TAIL_YAW_STRAIGHT, TAIL_PITCH_STRAIGHT) and moveWings(L_WING_CLOSED, R_WING_CLOSED)):
-    time.sleep(0.01)
+    time.sleep(0.05)
 # while not(moveWings(L_WING_OPEN, R_WING_OPEN) and moveTail(TAIL_YAW_STRAIGHT, TAIL_PITCH_DOWN)):
 #     time.sleep(0.01)
 # while not(moveTail(TAIL_YAW_LEFT, TAIL_PITCH_DOWN)):
@@ -236,68 +249,6 @@ while not(moveTail(TAIL_YAW_STRAIGHT, TAIL_PITCH_STRAIGHT) and moveWings(L_WING_
 #     time.sleep(0.01)
 # while not(moveWings(L_WING_CLOSED, R_WING_CLOSED)):
 #     time.sleep(0.01)
-
-# while 1:
-#     print("Press any key to continue! (or press ESC to quit!)")
-#     if getch() == chr(0x1b):
-#         break
-
-#     ##IDEA: create python function with inputs of position bytes to set all at once
-#     # Add rWing position value to the Syncwrite parameter storage
-#     addParamWrite(R_WING_ID, rWingGoalPositions[0])
-#     addParamWrite(L_WING_ID, lWingGoalPositions[0])
-#     addParamWrite(TAIL_YAW_ID, tailYawGoalPositions[0])
-#     addParamWrite(TAIL_PITCH_ID,tailPitchGoalPositions[0])
-    
-
-#     # Syncwrite goal position
-#     syncWriteGoal()
-
-#     # Clear syncwrite parameter storage
-#     groupSyncWrite.clearParam()
-
-#     while 1:
-#         # Syncread present position
-#         dxl_comm_result = groupSyncRead.txRxPacket()
-#         if dxl_comm_result != COMM_SUCCESS:
-#             print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
-
-#         # Check if groupsyncread data of Dynamixel#1 is available
-#         dxl_getdata_result = groupSyncRead.isAvailable(R_WING_ID, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
-#         if dxl_getdata_result != True:
-#             print("[ID:%03d] groupSyncRead getdata failed" % R_WING_ID)
-#             quit()
-
-#         # Check if groupsyncread data of Dynamixel#2 is available
-#         dxl_getdata_result = groupSyncRead.isAvailable(L_WING_ID, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
-#         if dxl_getdata_result != True:
-#             print("[ID:%03d] groupSyncRead getdata failed" % L_WING_ID)
-#             quit()
-
-
-#         # Get position values
-#         rWingPresentPosition = groupSyncRead.getData(R_WING_ID, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
-#         lWingPresentPosition = groupSyncRead.getData(L_WING_ID, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
-#         tailYawPresentPosition = groupSyncRead.getData(TAIL_YAW_ID, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
-#         tailPitchPresentPosition = groupSyncRead.getData(TAIL_PITCH_ID, XL_PRESENT_POSITION, LEN_XL_PRESENT_POSITION)
-
-#         print("[ID:%03d] GoalPos:%03d  PresPos:%03d\t[ID:%03d] GoalPos:%03d  PresPos:%03d" % (R_WING_ID, rWingGoalPositions[index], rWingPresentPosition, L_WING_ID, rWingGoalPositions[index], lWingPresentPosition))
-
-#         if(atPosition(rWingGoalPositions[0], rWingPresentPosition) and atPosition(lWingGoalPositions[0], lWingPresentPosition) and atPosition(tailYawGoalPositions[0], tailYawPresentPosition) and atPosition(tailPitchGoalPositions[0], tailPitchPresentPosition)):
-#             break #if goal and curr position are within the threshold, break out of loop
-
-
-    # # Change goal position
-    # if index == 0:
-    #     index = 1
-    # else:
-    #     index = 0
-
-
-
-
-
-
 
 
 # Clear syncread parameter storage
@@ -314,10 +265,6 @@ disableTorque(R_WING_ID)
 disableTorque(L_WING_ID)
 disableTorque(TAIL_PITCH_ID)
 disableTorque(TAIL_YAW_ID)
-
-    
-
-
 
 
 # Close port

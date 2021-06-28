@@ -1,2 +1,0 @@
-msg = "hell"
-print(msg)
