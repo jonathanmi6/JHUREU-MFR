@@ -101,6 +101,40 @@ def getPos(id):
 
     return currPos
 
+def getPosGoal(id):
+    goalPos = packetHandler.read4ByteTxRx(portHandler, id, XL_GOAL_POSITION)[0]
+
+    # ------- Eric Lara's patch for a read bug (error with negative integers) -----------
+    dxl_present_16Byte_1 = (goalPos & 0xFFFF)
+    dxl_present_16Byte_2 = (goalPos >> 16) & 0xFFFF
+
+    # print('[%s, %s]' % (dxl_present_16Byte_1, dxl_present_16Byte_2) )
+
+    if dxl_present_16Byte_1 < dxl_present_16Byte_2:
+        multiply  = 65535 - dxl_present_16Byte_2
+        goalPos = (dxl_present_16Byte_1 - 65535) - multiply*65535
+
+	# -------------------------------------------------------------------------
+
+    return goalPos
+
+def getProfileVelocity(id):
+    return packetHandler.read4ByteTxRx(portHandler, id, XL_PROFILE_VELOCITY)[0]
+
+def switchControlMode(id, mode):
+    print("Switching Motor ", id, " to: ", mode)
+    disableTorque(id)
+    packetHandler.write1ByteTxRx(portHandler, id, XL_OPERATING_MODE, mode)
+    enableTorque(id)
+
+def switchControlModeAllLegs(mode):
+    switchControlMode(RF_LEG_ID, mode)
+    switchControlMode(RM_LEG_ID, mode)
+    switchControlMode(RB_LEG_ID, mode)
+    switchControlMode(LF_LEG_ID, mode)
+    switchControlMode(LM_LEG_ID, mode)
+    switchControlMode(LB_LEG_ID, mode)
+
 def moveMotorPos(id, pos):
     dxl_comm_result, dxl_error = packetHandler.write4ByteTxRx(portHandler,id, XL_GOAL_POSITION, pos)
     if dxl_comm_result != COMM_SUCCESS:
@@ -112,44 +146,94 @@ def moveTail(pitchPos, yawPos):
     # return (moveMotor(TAIL_YAW_ID, yawPos) and moveMotor(TAIL_PITCH_ID, pitchPos))
     moveMotorPos(TAIL_YAW_ID, yawPos)
     moveMotorPos(TAIL_PITCH_ID, pitchPos)
-    return (atPosition(yawPos, getPos(TAIL_YAW_ID)) and atPositionCustom(pitchPos, getPos(TAIL_PITCH_ID), TAIL_MOVING_THRESHOLD))
+    return (tailAtPos())
 
 def moveWings(lPos, rPos):
     # return (moveMotor(L_WING_ID, lPos) and moveMotor(R_WING_ID, rPos))
     moveMotorPos(L_WING_ID, lPos)
     moveMotorPos(R_WING_ID, rPos)
-    return (atPosition(lPos, getPos(L_WING_ID)) and atPosition(rPos, getPos(R_WING_ID)))
+    return (wingsAtPos())
+
+def tailAtPos():
+    return (atPosition(getPosGoal(TAIL_YAW_ID), getPos(TAIL_YAW_ID)) and atPositionCustom(getPosGoal(TAIL_PITCH_ID), getPos(TAIL_PITCH_ID), TAIL_MOVING_THRESHOLD))
+
+def wingsAtPos():
+    return (atPosition(getPosGoal(L_WING_ID), getPos(L_WING_ID)) and atPosition(getPosGoal(R_WING_ID), getPos(R_WING_ID)))
+
+def legsAtPos():
+    return (atPosition(getPosGoal(RF_LEG_ID), getPos(RF_LEG_ID)) and atPosition(getPosGoal(RM_LEG_ID), getPos(RM_LEG_ID)) and atPosition(getPosGoal(RB_LEG_ID), getPos(RB_LEG_ID)) and atPosition(getPosGoal(LF_LEG_ID), getPos(LF_LEG_ID)) and atPosition(getPosGoal(LM_LEG_ID), getPos(LM_LEG_ID)) and atPosition(getPosGoal(LB_LEG_ID), getPos(LB_LEG_ID)))
 
 def moveLegsFromHome(pos):
-    moveMotorPos(RF_LEG_ID, RF_LEG_HOME - pos)
-    moveMotorPos(RM_LEG_ID, RM_LEG_HOME - pos)
-    moveMotorPos(RB_LEG_ID, RB_LEG_HOME - pos)
+    moveMotorPos(RF_LEG_ID, RF_LEG_HOME + pos)
+    moveMotorPos(RM_LEG_ID, RM_LEG_HOME + pos)
+    moveMotorPos(RB_LEG_ID, RB_LEG_HOME + pos)
     moveMotorPos(LF_LEG_ID, LF_LEG_HOME + pos)
     moveMotorPos(LM_LEG_ID, LM_LEG_HOME + pos)
     moveMotorPos(LB_LEG_ID, LB_LEG_HOME + pos)
-    return (atPosition(RF_LEG_HOME - pos, getPos(RF_LEG_ID)) and atPosition(LF_LEG_HOME + pos, getPos(LF_LEG_ID)))
+    return (legsAtPos())
 
 def moveLegsOffset(pos):
-    moveMotorPos(RF_LEG_ID, RF_LEG_HOME - pos)
-    moveMotorPos(RM_LEG_ID, RM_LEG_HOME - LEG_OFFSET - pos)
-    moveMotorPos(RB_LEG_ID, RB_LEG_HOME - pos)
-    moveMotorPos(LF_LEG_ID, LF_LEG_HOME + LEG_OFFSET + pos)
-    moveMotorPos(LM_LEG_ID, LM_LEG_HOME + pos)
-    moveMotorPos(LB_LEG_ID, LB_LEG_HOME + LEG_OFFSET + pos)
-    return (atPosition(RF_LEG_HOME - pos, getPos(RF_LEG_ID)) and atPosition(LF_LEG_HOME + LEG_OFFSET + pos, getPos(LF_LEG_ID)))
+    moveMotorPos(RF_LEG_ID, pos)
+    moveMotorPos(RM_LEG_ID, 4096 - LEG_OFFSET + pos)
+    moveMotorPos(RB_LEG_ID, pos)
+    moveMotorPos(LF_LEG_ID, LEG_OFFSET + pos)
+    moveMotorPos(LM_LEG_ID, pos)
+    moveMotorPos(LB_LEG_ID, LEG_OFFSET + pos)
+    return (legsAtPos())
 
-def offsetLegsFromHome():
-    moveMotorPos(RF_LEG_ID, RF_LEG_HOME)
-    moveMotorPos(RM_LEG_ID, RM_LEG_HOME - LEG_OFFSET)
-    moveMotorPos(RB_LEG_ID, RB_LEG_HOME)
-    moveMotorPos(LF_LEG_ID, LF_LEG_HOME + LEG_OFFSET)
-    moveMotorPos(LM_LEG_ID, LM_LEG_HOME)
-    moveMotorPos(LB_LEG_ID, LB_LEG_HOME + LEG_OFFSET)
+# def moveLegsRelative(pos):
+#     switchControlModeAllLegs(XL_POSITION_CONTROL)
+#     moveLegsFromHome(pos)
+#     switchControlModeAllLegs(XL_EXT_POSITION_CONTROL)
 
-    while not (atPosition(RF_LEG_HOME, getPos(RF_LEG_ID)) and atPosition(LF_LEG_HOME + LEG_OFFSET, getPos(LF_LEG_ID))):
-        print("Offsetting Legs", RF_LEG_HOME, getPos(RF_LEG_ID), LF_LEG_HOME + LEG_OFFSET, getPos(LF_LEG_ID))
-        time.sleep(0.01)
+# def offsetLegsFromHome():
+#     moveMotorPos(RF_LEG_ID, RF_LEG_HOME)
+#     moveMotorPos(RM_LEG_ID, RM_LEG_HOME - LEG_OFFSET)
+#     moveMotorPos(RB_LEG_ID, RB_LEG_HOME)
+#     moveMotorPos(LF_LEG_ID, LF_LEG_HOME + LEG_OFFSET)
+#     moveMotorPos(LM_LEG_ID, LM_LEG_HOME)
+#     moveMotorPos(LB_LEG_ID, LB_LEG_HOME + LEG_OFFSET)
 
+#     while not (atPosition(RF_LEG_HOME, getPos(RF_LEG_ID)) and atPosition(LF_LEG_HOME + LEG_OFFSET, getPos(LF_LEG_ID))):
+#         print("Offsetting Legs", RF_LEG_HOME, getPos(RF_LEG_ID), LF_LEG_HOME + LEG_OFFSET, getPos(LF_LEG_ID))
+#         time.sleep(0.01)
+
+def setProfileVelocity(id, vel):
+    dxl_comm_result, dxl_error = packetHandler.write4ByteTxRx(portHandler, id, XL_PROFILE_VELOCITY, vel)
+    if dxl_comm_result != COMM_SUCCESS:
+        print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+    elif dxl_error != 0:
+        print("%s" % packetHandler.getRxPacketError(dxl_error))
+
+def setAllLegProfileVelocity(vel):
+    setProfileVelocity(RF_LEG_ID, vel)
+    moveMotorPos(RF_LEG_ID, getPosGoal(RF_LEG_ID))
+    setProfileVelocity(RM_LEG_ID, vel)
+    moveMotorPos(RM_LEG_ID, getPosGoal(RM_LEG_ID))
+    setProfileVelocity(RB_LEG_ID, vel)
+    moveMotorPos(RB_LEG_ID, getPosGoal(RB_LEG_ID))
+    setProfileVelocity(LF_LEG_ID, vel)
+    moveMotorPos(LF_LEG_ID, getPosGoal(LF_LEG_ID))
+    setProfileVelocity(LM_LEG_ID, vel)
+    moveMotorPos(LM_LEG_ID, getPosGoal(LM_LEG_ID))
+    setProfileVelocity(LB_LEG_ID, vel)
+    moveMotorPos(LB_LEG_ID, getPosGoal(LB_LEG_ID))
+
+def setOffsetLegProfileVelocity(vel):
+    setProfileVelocity(RM_LEG_ID, vel)
+    moveMotorPos(RM_LEG_ID, getPosGoal(RM_LEG_ID))
+    setProfileVelocity(LF_LEG_ID, vel)
+    moveMotorPos(LF_LEG_ID, getPosGoal(LF_LEG_ID))
+    setProfileVelocity(LB_LEG_ID, vel)
+    moveMotorPos(LB_LEG_ID, getPosGoal(LB_LEG_ID))
+
+def setNonOffsetLegProfileVelocity(vel):
+    setProfileVelocity(RF_LEG_ID, vel)
+    moveMotorPos(RF_LEG_ID, getPosGoal(RF_LEG_ID))
+    setProfileVelocity(RB_LEG_ID, vel)
+    moveMotorPos(RB_LEG_ID, getPosGoal(RB_LEG_ID))
+    setProfileVelocity(LM_LEG_ID, vel)
+    moveMotorPos(LM_LEG_ID, getPosGoal(LM_LEG_ID))
 
 
 def enableAll():
