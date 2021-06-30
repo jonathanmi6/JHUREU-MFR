@@ -112,7 +112,7 @@ def walk(rotations):
     curr = getPos(LM_LEG_ID)
     moveLegsOffset(curr + pos)
 
-def walkLoop(rotations):
+def walkLoopSmart(rotations):
     print("Walking ", rotations, " Rotations Uninterrupted")
     pos = rotations * 4096
     curr = getPos(LM_LEG_ID)
@@ -136,6 +136,16 @@ def walkLoop(rotations):
         # print("RF goal: ", getPosGoal(RF_LEG_ID), "RF curr: ", getPos(RF_LEG_ID), "RF PV: ", getProfileVelocity(RF_LEG_ID))
 
     # setAllLegProfileVelocity(RUN_PROFILE_VELOCITY)
+
+def walkLoop(rotations, vel):
+    print("Walking ", rotations, " Rotations Uninterrupted")
+    pos = rotations * 4096
+    curr = getPos(LM_LEG_ID)
+    
+    setAllLegProfileVelocity(vel)
+    moveLegsOffset(curr + pos)
+    while not(legsAtPos()):
+        time.sleep(0.01)
 
 def pitchUp():
     print("Pitching up")
@@ -198,7 +208,7 @@ homeTail()
 offsetLegsRelative()
 
 # pain(6)
-walkLoop(10)
+walkLoopSmart(10)
 
 # offsetLegsRelative()
 # setAllLegProfileVelocity(RUN_PROFILE_VELOCITY)
