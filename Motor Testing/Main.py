@@ -63,6 +63,13 @@ def stowLegs():
 def offsetLegsRelative():
     switchControlModeAllLegs(XL_POSITION_CONTROL)
 
+    # moveMotorPos(RF_LEG_ID, 4096 - LEG_OFFSET)
+    # moveMotorPos(RM_LEG_ID, 0 + LEG_OFFSET)
+    # moveMotorPos(RB_LEG_ID, 4096 - LEG_OFFSET)
+    # moveMotorPos(LF_LEG_ID, 0 + LEG_OFFSET)
+    # moveMotorPos(LM_LEG_ID, 4096 - LEG_OFFSET)
+    # moveMotorPos(LB_LEG_ID, 0 + LEG_OFFSET)
+
     moveMotorPos(RF_LEG_ID, 0)
     moveMotorPos(RM_LEG_ID, 4096 - LEG_OFFSET)
     moveMotorPos(RB_LEG_ID, 0)
@@ -137,22 +144,97 @@ def walkLoopSmart(rotations):
 
     # setAllLegProfileVelocity(RUN_PROFILE_VELOCITY)
 
+def walkLoopSmartVel(secs):
+    print("Walking ", secs, " Seconds Uninterrupted")
+    setAllLegProfileVelocity(RUN_PROFILE_VELOCITY)
+    switchControlModeAllLegs(XL_VELOCITY_CONTROL)
+    setAllLegsVel(STOP_VELOCITY)
+
+    st = time.time()
+
+    while (time.time() - st < secs):
+        if(((abs(getPos(RM_LEG_ID)) % 4096) < SLOW_GAIT_RANGE_LOWER) or ((abs(getPos(RM_LEG_ID)) % 4096) > SLOW_GAIT_RANGE_UPPER)):
+            setOffsetLegsVel(WALK_VELOCITY)
+        else:
+            setOffsetLegsVel(RUN_VELOCITY)
+
+        if(((abs(getPos(LM_LEG_ID)) % 4096) < SLOW_GAIT_RANGE_LOWER) or ((abs(getPos(LM_LEG_ID)) % 4096) > SLOW_GAIT_RANGE_UPPER)):
+            setNonOffsetLegsVel(WALK_VELOCITY)
+        else:
+            setNonOffsetLegsVel(RUN_VELOCITY)
+
+
+    switchControlModeAllLegs(XL_EXT_POSITION_CONTROL)
+
+
 def walkLoop(rotations, vel):
     print("Walking ", rotations, " Rotations Uninterrupted")
     pos = rotations * 4096
     curr = getPos(LM_LEG_ID)
-    
+
     setAllLegProfileVelocity(vel)
     moveLegsOffset(curr + pos)
     while not(legsAtPos()):
         time.sleep(0.01)
 
+def walkLoopShaking(rotations, vel):
+    print("Walking ", rotations, " Rotations While Shaking")
+    pos = rotations * 4096
+    curr = getPos(LM_LEG_ID)
+
+    setAllLegProfileVelocity(vel)
+    moveLegsOffset(curr + pos)
+    wingIndex = 0
+    tailIndex = 0
+    moveWings(L_WING_CLOSED, R_WING_CLOSED)
+    st = time.time()
+    while not(legsAtPos()):
+        # in ground: 2600, beams 22cm apart
+        
+        if((tailAtPos() and tailIndex == 0) or time.time() - st > 0.25):
+            moveTail(TAIL_PITCH_IN_GROUND, TAIL_YAW_RIGHT_SMALL)
+            tailIndex = 1
+            st = time.time()
+
+        elif((tailAtPos() and tailIndex == 1) or time.time() - st > 0.25):
+            moveTail(TAIL_PITCH_IN_GROUND, TAIL_YAW_LEFT_SMALL)
+            tailIndex = 0
+            st = time.time()
+            
+    homeTail()
+    homeWings()
+
+def walkLoopShaking2(rotations, vel):
+    print("Walking ", rotations, " Rotations While Shaking")
+    pos = rotations * 4096
+    curr = getPos(LM_LEG_ID)
+
+    setAllLegProfileVelocity(vel)
+    moveLegsOffset(curr + pos)
+    wingIndex = 0
+    tailIndex = 0
+    moveWings(L_WING_CLOSED, R_WING_CLOSED)
+    st = time.time()
+    while not(legsAtPos()):
+        if((tailAtPos() and tailIndex == 0) or time.time() - st > 0.5):
+            moveTail(2600, TAIL_YAW_STRAIGHT)
+            tailIndex = 1
+            st = time.time()
+        elif((tailAtPos() and tailIndex == 1) or time.time() - st > 0.5):
+            moveTail(2500, 1800)
+            tailIndex = 0
+            st = time.time()
+    homeTail()
+    homeWings()
+
+
 def pitchUp():
     print("Pitching up")
-    while not (moveTail(TAIL_PITCH_UP, TAIL_YAW_STRAIGHT)):
-        time.sleep(0.01)
-    time.sleep(0.5)
-    homeTail()
+    moveTail(TAIL_PITCH_UP, TAIL_YAW_STRAIGHT)
+    timeOut(GLOBAL_TIMEOUT, 'TAIL')
+    time.sleep(0.25)
+    moveTail(TAIL_PITCH_GROUND, TAIL_YAW_STRAIGHT)
+    timeOut(GLOBAL_TIMEOUT, 'TAIL')
 
 def shakeTail(wags):
     print("Shaking Tail ", wags, " times")
@@ -182,22 +264,20 @@ def rollOver():
     homeTail()
 
 
-def pain(rotations):
-    print("Walking ", rotations, " Rotations Uninterrupted")
-    pos = rotations * 4096
-    curr = getPos(RF_LEG_ID)
+def pain(secs):
+    print("Walking ", secs, " Seconds Uninterrupted")
+    st = time.time()
+    switchControlModeAllLegs(XL_VELOCITY_CONTROL)
+    moveMotorVel(RF_LEG_ID, STOP_VELOCITY)
 
-    setAllLegProfileVelocity(RUN_PROFILE_VELOCITY)
-    moveMotorPos(RF_LEG_ID ,curr + pos)
-    while not(legsAtPos()):
-        if(((abs(getPos(RF_LEG_ID)) % 4096) < SLOW_GAIT_RANGE_LOWER) or ((abs(getPos(RF_LEG_ID)) % 4096) > SLOW_GAIT_RANGE_UPPER)):
-            print("walking")
-            setProfileVelocity(RF_LEG_ID, WALK_PROFILE_VELOCITY)
-            moveMotorPos(RF_LEG_ID, getPosGoal(RF_LEG_ID))
+    while not(time.time() - st > secs):
+        if(abs(getPos(RF_LEG_ID)%4096) < SLOW_GAIT_RANGE_LOWER or abs(getPos(RF_LEG_ID)%4096) > SLOW_GAIT_RANGE_UPPER):
+            moveMotorVel(RF_LEG_ID, WALK_VELOCITY)
         else:
-            setProfileVelocity(RF_LEG_ID, RUN_PROFILE_VELOCITY)
-            moveMotorPos(RF_LEG_ID, getPosGoal(RF_LEG_ID))
-        print("RF goal: ", getPosGoal(RF_LEG_ID), "RF curr: ", getPos(RF_LEG_ID)%4096, "RF PV: ", getProfileVelocity(RF_LEG_ID))
+            moveMotorVel(RF_LEG_ID, RUN_VELOCITY)
+        print("RF goal: ", getPosGoal(RF_LEG_ID), "RF curr: ", getPos(RF_LEG_ID), "RF PV: ", getProfileVelocity(RF_LEG_ID))
+    
+    switchControlModeAllLegs(XL_EXT_POSITION_CONTROL)
 
 enableAll()
 
@@ -208,17 +288,33 @@ homeTail()
 offsetLegsRelative()
 
 # pain(6)
-walkLoopSmart(10)
-
-# offsetLegsRelative()
-# setAllLegProfileVelocity(RUN_PROFILE_VELOCITY)
-# moveLegsOffset(15000)
-# while not (legsAtPos()):
-#     if(abs(getPos(RF_LEG_ID)) > 6000):
-#         setAllLegProfileVelocity(WALK_PROFILE_VELOCITY)
+# walkLoopSmart(10)
+# walkLoopSmartVel(10)
+# st = time.time()
+# switchControlModeAllLegs(XL_VELOCITY_CONTROL)
+# while not(time.time() - st > 10 ):
+#     if(time.time() - st < 5 or time.time() - st > 8):
+#         moveMotorVel(RF_LEG_ID, RUN_VELOCITY)
 #     else:
-#         setAllLegProfileVelocity(RUN_PROFILE_VELOCITY)
-#     time.sleep(0.01)
+#         moveMotorVel(RF_LEG_ID, WALK_VELOCITY)
+#     print("Time: ", time.time() - st, " Vel goal: ", getVelGoal(RF_LEG_ID), " Curr Vel: ", getVel(RF_LEG_ID), "Curr Pos: ", getPos(RF_LEG_ID)%4096)
+
+
+# disableAll()
+# while 1:
+#     if(abs(getPos(RF_LEG_ID)%4096) < SLOW_GAIT_RANGE_LOWER or abs(getPos(RF_LEG_ID)%4096) > SLOW_GAIT_RANGE_UPPER):
+#         print("walking")
+#     else:
+#         print("running")
+
+
+# walkLoop(10,RUN_PROFILE_VELOCITY)
+
+walkLoopShaking(15, RUN_PROFILE_VELOCITY)
+
+# moveTail(TAIL_PITCH_IN_GROUND, TAIL_YAW_LEFT_SMALL)
+# walkLoop(10,RUN_PROFILE_VELOCITY)
+
 
 # print("Goal: ", getPosGoal(RF_LEG_ID), " Curr: ", getPos(RF_LEG_ID), "Profile Velocity: ", getProfileVelocity(RF_LEG_ID))
 # print("Goal: ", getPosGoal(RM_LEG_ID), " Curr: ", getPos(RM_LEG_ID), "Profile Velocity: ", getProfileVelocity(RM_LEG_ID))

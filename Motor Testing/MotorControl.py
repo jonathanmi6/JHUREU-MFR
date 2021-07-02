@@ -101,6 +101,15 @@ def getPos(id):
 
     return currPos
 
+def getVel(id):
+    currVel, dxl_comm_result, dxl_error = packetHandler.read4ByteTxRx(portHandler, id, XL_PRESENT_VELOCITY)
+    if dxl_comm_result != COMM_SUCCESS:
+        print("getPos Error: %s" % packetHandler.getTxRxResult(dxl_comm_result))
+    elif dxl_error != 0:
+        print("%s" % packetHandler.getRxPacketError(dxl_error))
+
+    return currVel
+
 def getPosGoal(id):
     goalPos = packetHandler.read4ByteTxRx(portHandler, id, XL_GOAL_POSITION)[0]
 
@@ -117,6 +126,15 @@ def getPosGoal(id):
 	# -------------------------------------------------------------------------
 
     return goalPos
+
+def getVelGoal(id):
+    currVel, dxl_comm_result, dxl_error = packetHandler.read4ByteTxRx(portHandler, id, XL_GOAL_VELOCITY)
+    if dxl_comm_result != COMM_SUCCESS:
+        print("getPos Error: %s" % packetHandler.getTxRxResult(dxl_comm_result))
+    elif dxl_error != 0:
+        print("%s" % packetHandler.getRxPacketError(dxl_error))
+
+    return currVel
 
 def getProfileVelocity(id):
     return packetHandler.read4ByteTxRx(portHandler, id, XL_PROFILE_VELOCITY)[0]
@@ -141,6 +159,13 @@ def moveMotorPos(id, pos):
         print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
     elif dxl_error != 0:
         print("%s" % packetHandler.getRxPacketError(dxl_error))
+
+def moveMotorVel(id, vel):
+    dxl_comm_result, dxl_error = packetHandler.write4ByteTxRx(portHandler,id, XL_GOAL_VELOCITY, vel)
+    if dxl_comm_result != COMM_SUCCESS:
+        print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+    elif dxl_error != 0:
+        print("%s" % packetHandler.getRxPacketError(dxl_error))    
 
 def moveTail(pitchPos, yawPos):
     # return (moveMotor(TAIL_YAW_ID, yawPos) and moveMotor(TAIL_PITCH_ID, pitchPos))
@@ -180,6 +205,24 @@ def moveLegsOffset(pos):
     moveMotorPos(LM_LEG_ID, pos)
     moveMotorPos(LB_LEG_ID, LEG_OFFSET + pos)
     return (legsAtPos())
+
+def setAllLegsVel(vel):
+    moveMotorVel(RF_LEG_ID, vel)
+    moveMotorVel(RM_LEG_ID, vel)
+    moveMotorVel(RB_LEG_ID, vel)
+    moveMotorVel(LF_LEG_ID, vel)
+    moveMotorVel(LM_LEG_ID, vel)
+    moveMotorVel(LB_LEG_ID, vel)
+
+def setOffsetLegsVel(vel):
+    moveMotorVel(RM_LEG_ID, vel)
+    moveMotorVel(LF_LEG_ID, vel)
+    moveMotorVel(LB_LEG_ID, vel)
+
+def setNonOffsetLegsVel(vel):
+    moveMotorVel(RF_LEG_ID, vel)
+    moveMotorVel(RB_LEG_ID, vel)
+    moveMotorVel(LM_LEG_ID, vel)
 
 # def moveLegsRelative(pos):
 #     switchControlModeAllLegs(XL_POSITION_CONTROL)
