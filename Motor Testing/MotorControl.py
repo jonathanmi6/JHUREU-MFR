@@ -79,7 +79,7 @@ def atPositionCustom(goal, curr, threshold):
         return False
     return True
 
-def getPos(id):
+def getPos(id): #get position of motor
     currPos, dxl_comm_result, dxl_error = packetHandler.read4ByteTxRx(portHandler, id, XL_PRESENT_POSITION)
     if dxl_comm_result != COMM_SUCCESS:
         print("getPos Error: %s" % packetHandler.getTxRxResult(dxl_comm_result))

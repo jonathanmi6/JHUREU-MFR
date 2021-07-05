@@ -309,25 +309,29 @@ offsetLegsRelative()
 
 
 # walkLoop(10,RUN_PROFILE_VELOCITY)
-
-walkLoopShaking(15, RUN_PROFILE_VELOCITY)
+# walkLoopShaking(15, RUN_PROFILE_VELOCITY)
 
 # moveTail(TAIL_PITCH_IN_GROUND, TAIL_YAW_LEFT_SMALL)
 # walkLoop(10,RUN_PROFILE_VELOCITY)
 
+walk(10)
+index = 0
+while not legsAtPos():
+    # pitchUp()
+    # if(wingsAtPos() and index == 0):
+    #     moveWings(L_WING_CLOSED, R_WING_CLOSED)
+    #     index = 1
+    # if(wingsAtPos() and index == 1):
+    #     moveWings(L_WING_AJAR, R_WING_AJAR)
+    #     index = 0
 
-# print("Goal: ", getPosGoal(RF_LEG_ID), " Curr: ", getPos(RF_LEG_ID), "Profile Velocity: ", getProfileVelocity(RF_LEG_ID))
-# print("Goal: ", getPosGoal(RM_LEG_ID), " Curr: ", getPos(RM_LEG_ID), "Profile Velocity: ", getProfileVelocity(RM_LEG_ID))
-# print("Goal: ", getPosGoal(RB_LEG_ID), " Curr: ", getPos(RB_LEG_ID), "Profile Velocity: ", getProfileVelocity(RB_LEG_ID))
-# print("Goal: ", getPosGoal(LF_LEG_ID), " Curr: ", getPos(LF_LEG_ID), "Profile Velocity: ", getProfileVelocity(LF_LEG_ID))
-# print("Goal: ", getPosGoal(LM_LEG_ID), " Curr: ", getPos(LM_LEG_ID), "Profile Velocity: ", getProfileVelocity(LM_LEG_ID))
-# print("Goal: ", getPosGoal(LB_LEG_ID), " Curr: ", getPos(LB_LEG_ID), "Profile Velocity: ", getProfileVelocity(LB_LEG_ID))
+    if(tailAtPos() and index == 0):
+        moveTail(TAIL_PITCH_STRAIGHT, TAIL_YAW_LEFT_SMALL)
+        index = 1
+    if(tailAtPos() and index == 1):
+        moveTail(TAIL_PITCH_STRAIGHT, TAIL_YAW_RIGHT_SMALL)
+        index = 0
 
-# setAllLegProfileVelocity(RUN_PROFILE_VELOCITY)
-
-
-
-# walkLoop(3)
 
 
 disableAll()
