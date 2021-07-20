@@ -112,7 +112,7 @@ def selfRight():
 
 def walk(rotations):
     print("Walking ", rotations, " Rotations")
-    pos = rotations * 4096
+    pos = int(rotations * 4096)
     curr = getPos(LM_LEG_ID)
     moveLegsOffset(curr + pos)
 
@@ -292,12 +292,24 @@ def keyboardControl():
             break
 
         if(keyboard.is_pressed('w')):
-            curr = getPos(RM_LEG_ID)
-            moveLegsOffset(curr + 25)
+            # walk(0.1)
+            curr = getPos(LM_LEG_ID)
+            moveLegsOffset(curr + 1200)
         
         if(keyboard.is_pressed('s')):
-            curr = getPos(RM_LEG_ID)
-            moveLegsOffset(curr - 25)
+            curr = getPos(LM_LEG_ID)
+            moveLegsOffset(curr - 1200)
+            # walk(-0.1)
+
+        if(keyboard.is_pressed('up')):
+            # walk(0.1)
+            curr = getPos(LM_LEG_ID)
+            moveLegsOffset(curr + 1200)
+        
+        if(keyboard.is_pressed('down')):
+            curr = getPos(LM_LEG_ID)
+            moveLegsOffset(curr - 1200)
+            # walk(-0.1)
 
         if(keyboard.is_pressed('j')):
             moveMotorPos(TAIL_PITCH_ID, TAIL_PITCH_DOWN)

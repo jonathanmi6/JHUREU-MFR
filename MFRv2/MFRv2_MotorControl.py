@@ -208,6 +208,15 @@ def moveLegsOffset(pos):
     moveMotorPos(LB_LEG_ID, LEG_OFFSET + pos)
     # return (legsAtPos())
 
+def moveLegsNonOffset(pos):
+    moveMotorPos(RF_LEG_ID, pos)
+    moveMotorPos(RM_LEG_ID, pos)
+    moveMotorPos(RB_LEG_ID, pos)
+    moveMotorPos(LF_LEG_ID, pos)
+    moveMotorPos(LM_LEG_ID, pos)
+    moveMotorPos(LB_LEG_ID, pos)
+    # return (legsAtPos())
+
 def setAllLegsVel(vel):
     moveMotorVel(RF_LEG_ID, vel)
     moveMotorVel(RM_LEG_ID, vel)
