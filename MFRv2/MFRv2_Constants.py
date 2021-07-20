@@ -1,0 +1,97 @@
+# Motor IDs
+RF_LEG_ID = 1 #right front
+RM_LEG_ID = 2 #right middle
+RB_LEG_ID = 3 #right back
+LF_LEG_ID = 4
+LM_LEG_ID = 5
+LB_LEG_ID = 6
+TAIL_PITCH_ID = 7
+TAIL_YAW_ID = 8
+R_WING_ID = 10
+L_WING_ID = 11  
+
+#BAUD & Device
+BAUDRATE = 1000000 # Dynamixel default baudrate : 57600
+DEVICENAME = 'COM9' # Check which port is being used on your controller  # ex) Windows: "COM1"   Linux: "/dev/ttyUSB0" Mac: "/dev/tty.usbserial-*"
+
+# Control table address
+XL_OPERATING_MODE = 11
+XL_TORQUE_ENABLE = 64
+XL_LED = 65
+XL_GOAL_VELOCITY = 104
+XL_PROFILE_VELOCITY = 112
+XL_GOAL_POSITION = 116
+XL_MOVING = 122
+XL_PRESENT_VELOCITY = 128
+XL_PRESENT_POSITION = 132
+
+#Torque enable/disable
+TORQUE_ENABLE = 1
+TORQUE_DISABLE = 0
+
+# Operating Mode
+XL_VELOCITY_CONTROL = 1
+XL_POSITION_CONTROL = 3
+XL_EXT_POSITION_CONTROL = 4
+
+# Data Byte Length
+XL_GOAL_POSITION_LEN = 4
+XL_PRESENT_POSITION_LEN = 4
+
+# Protocol version
+PROTOCOL_VERSION = 2.0
+
+#position values
+R_WING_CLOSED  = 2048
+R_WING_OPEN  = 500
+R_WING_AJAR = 1800
+L_WING_CLOSED = 2048
+L_WING_OPEN = 3500
+L_WING_AJAR = 2300
+
+
+TAIL_PITCH_UP = 2600
+TAIL_PITCH_DOWN = 500
+TAIL_PITCH_STRAIGHT = 1500
+TAIL_PITCH_GROUND = 1200
+TAIL_PITCH_IN_GROUND = 900
+TAIL_PITCH_FORWARD = 3500
+TAIL_YAW_RIGHT = 1500
+TAIL_YAW_LEFT = 2500
+TAIL_YAW_STRAIGHT = 2048
+TAIL_YAW_LEFT_SMALL = 2280
+TAIL_YAW_RIGHT_SMALL = 1840
+
+RF_LEG_HOME = 0 #right front
+RM_LEG_HOME = 0 #right mHOMEdle
+RB_LEG_HOME = 0 #right back
+LF_LEG_HOME = 0
+LM_LEG_HOME = 0
+LB_LEG_HOME = 0
+
+# LEG_OFFSET = 600
+LEG_OFFSET = 1024
+
+
+RUN_PROFILE_VELOCITY = 0
+WALK_PROFILE_VELOCITY = 50 #max = 300
+RUN_VELOCITY = 265
+WALK_VELOCITY = 120
+STOP_VELOCITY = 0
+SLOW_GAIT_RANGE_LOWER = 100
+SLOW_GAIT_RANGE_UPPER = 2800
+ #4100 total loop:
+ #run time = (4100-1000)/velocity(265) = 11.7
+ #walk time = 11.7 = 1000/velocity(walk) -> walk velocity = 85.5 ~~ 85
+
+ #4100 total loop:
+ #run time = (4100-1200)/velocity(265) = 11
+ #walk time = 11 = 1000/velocity(walk) -> walk velocity = 90
+
+#500 units at 265 to slow down to 90
+#600-700 units at 90 to speed up to 265
+
+DXL_MOVING_STATUS_THRESHOLD = 30
+TAIL_MOVING_THRESHOLD = 50
+
+GLOBAL_TIMEOUT = 2

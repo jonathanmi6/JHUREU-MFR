@@ -18,7 +18,7 @@ else:
 
 from dynamixel_sdk import *
 
-from Constants import *
+from MFRv2_Constants import *
 
 # Initialize PortHandler instance & Set the port path
 portHandler = PortHandler(DEVICENAME)
@@ -53,7 +53,7 @@ def enableTorque(id):
     dxl_comm_result, dxl_error = packetHandler.write1ByteTxRx(portHandler, id, XL_TORQUE_ENABLE, TORQUE_ENABLE)
     if dxl_comm_result != COMM_SUCCESS:
         print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
-        quit()
+        # quit()
     elif dxl_error != 0:
         print("%s" % packetHandler.getRxPacketError(dxl_error))
     else:
@@ -63,7 +63,7 @@ def disableTorque(id):
     dxl_comm_result, dxl_error = packetHandler.write1ByteTxRx(portHandler, id, XL_TORQUE_ENABLE, TORQUE_DISABLE)
     if dxl_comm_result != COMM_SUCCESS:
         print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
-        quit()
+        # quit()
     elif dxl_error != 0:
         print("%s" % packetHandler.getRxPacketError(dxl_error))
     else:
@@ -80,11 +80,13 @@ def atPositionCustom(goal, curr, threshold):
     return True
 
 def getPos(id): #get position of motor
-    currPos, dxl_comm_result, dxl_error = packetHandler.read4ByteTxRx(portHandler, id, XL_PRESENT_POSITION)
-    if dxl_comm_result != COMM_SUCCESS:
-        print("getPos Error: %s" % packetHandler.getTxRxResult(dxl_comm_result))
-    elif dxl_error != 0:
-        print("%s" % packetHandler.getRxPacketError(dxl_error))
+    # currPos, dxl_comm_result, dxl_error = packetHandler.read4ByteTxRx(portHandler, id, XL_PRESENT_POSITION)
+    currPos = packetHandler.read4ByteTxRx(portHandler, id, XL_PRESENT_POSITION)[0]
+
+    # if dxl_comm_result != COMM_SUCCESS:
+    #     print("getPos Error: %s" % packetHandler.getTxRxResult(dxl_comm_result))
+    # elif dxl_error != 0:
+    #     print("%s" % packetHandler.getRxPacketError(dxl_error))
 
 
     # ------- Eric Lara's patch for a read bug (error with negative integers) -----------
@@ -177,7 +179,7 @@ def moveWings(lPos, rPos):
     # return (moveMotor(L_WING_ID, lPos) and moveMotor(R_WING_ID, rPos))
     moveMotorPos(L_WING_ID, lPos)
     moveMotorPos(R_WING_ID, rPos)
-    return (wingsAtPos())
+    # return (wingsAtPos())
 
 def tailAtPos():
     return (atPosition(getPosGoal(TAIL_YAW_ID), getPos(TAIL_YAW_ID)) and atPositionCustom(getPosGoal(TAIL_PITCH_ID), getPos(TAIL_PITCH_ID), TAIL_MOVING_THRESHOLD))
@@ -195,7 +197,7 @@ def moveLegsFromHome(pos):
     moveMotorPos(LF_LEG_ID, LF_LEG_HOME + pos)
     moveMotorPos(LM_LEG_ID, LM_LEG_HOME + pos)
     moveMotorPos(LB_LEG_ID, LB_LEG_HOME + pos)
-    return (legsAtPos())
+    # return (legsAtPos())
 
 def moveLegsOffset(pos):
     moveMotorPos(RF_LEG_ID, pos)
@@ -204,7 +206,7 @@ def moveLegsOffset(pos):
     moveMotorPos(LF_LEG_ID, LEG_OFFSET + pos)
     moveMotorPos(LM_LEG_ID, pos)
     moveMotorPos(LB_LEG_ID, LEG_OFFSET + pos)
-    return (legsAtPos())
+    # return (legsAtPos())
 
 def setAllLegsVel(vel):
     moveMotorVel(RF_LEG_ID, vel)

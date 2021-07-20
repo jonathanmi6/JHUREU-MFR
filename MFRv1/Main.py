@@ -1,13 +1,8 @@
-#Tail Pitch: ID = 7
-#Tail Yaw: ID = 8
-#Right wing: ID = 10
-#Left wing: ID = 11
-
-import os
-
 from dynamixel_sdk import *
-from Constants import *
-from MotorControl import *
+from MFRv2_Constants import *
+from MFRv2_MotorControl import *
+
+import keyboard
 
 def timeOut(secs, system):
     st = time.time()
@@ -42,11 +37,6 @@ def homeWings():
     timeOut(GLOBAL_TIMEOUT, 'WINGS')
     print("Homed Wings")
 
-# def homeLegs():
-#     moveLegsFromHome(0)
-#     timeOut(GLOBAL_TIMEOUT, 'LEGS')
-#     print("Homed Legs")
-
 def homeLegs():
     switchControlModeAllLegs(XL_POSITION_CONTROL)
     moveLegsFromHome(0)
@@ -63,19 +53,26 @@ def stowLegs():
 def offsetLegsRelative():
     switchControlModeAllLegs(XL_POSITION_CONTROL)
 
-    # moveMotorPos(RF_LEG_ID, 4096 - LEG_OFFSET)
-    # moveMotorPos(RM_LEG_ID, 0 + LEG_OFFSET)
-    # moveMotorPos(RB_LEG_ID, 4096 - LEG_OFFSET)
-    # moveMotorPos(LF_LEG_ID, 0 + LEG_OFFSET)
-    # moveMotorPos(LM_LEG_ID, 4096 - LEG_OFFSET)
-    # moveMotorPos(LB_LEG_ID, 0 + LEG_OFFSET)
-
     moveMotorPos(RF_LEG_ID, 0)
     moveMotorPos(RM_LEG_ID, 4096 - LEG_OFFSET)
     moveMotorPos(RB_LEG_ID, 0)
     moveMotorPos(LF_LEG_ID, 0 + LEG_OFFSET)
     moveMotorPos(LM_LEG_ID, 0)
     moveMotorPos(LB_LEG_ID, 0 + LEG_OFFSET)
+
+    timeOut(GLOBAL_TIMEOUT, 'LEGS')
+
+    switchControlModeAllLegs(XL_EXT_POSITION_CONTROL)
+
+def homeLegsRelative():
+    switchControlModeAllLegs(XL_POSITION_CONTROL)
+
+    moveMotorPos(RF_LEG_ID, 0)
+    moveMotorPos(RM_LEG_ID, 0)
+    moveMotorPos(RB_LEG_ID, 0)
+    moveMotorPos(LF_LEG_ID, 0)
+    moveMotorPos(LM_LEG_ID, 0)
+    moveMotorPos(LB_LEG_ID, 0)
 
     timeOut(GLOBAL_TIMEOUT, 'LEGS')
 
@@ -118,6 +115,13 @@ def walk(rotations):
     pos = rotations * 4096
     curr = getPos(LM_LEG_ID)
     moveLegsOffset(curr + pos)
+
+def walkNonOffset(rotations):
+    print("Walking ", rotations, " Rotations without leg offset")
+    homeLegsRelative()
+    pos = rotations * 4096
+    curr = getPos(LM_LEG_ID)
+    moveLegsFromHome(curr + pos)
 
 def walkLoopSmart(rotations):
     print("Walking ", rotations, " Rotations Uninterrupted")
@@ -233,7 +237,7 @@ def pitchUp():
     moveTail(TAIL_PITCH_UP, TAIL_YAW_STRAIGHT)
     timeOut(GLOBAL_TIMEOUT, 'TAIL')
     time.sleep(0.25)
-    moveTail(TAIL_PITCH_GROUND, TAIL_YAW_STRAIGHT)
+    moveTail(TAIL_PITCH_IN_GROUND, TAIL_YAW_STRAIGHT)
     timeOut(GLOBAL_TIMEOUT, 'TAIL')
 
 def shakeTail(wags):
@@ -279,15 +283,66 @@ def pain(secs):
     
     switchControlModeAllLegs(XL_EXT_POSITION_CONTROL)
 
+
+
+def keyboardControl():
+    print("Enabling Keyboard Control")
+    while True:
+        if(keyboard.is_pressed('esc')):
+            break
+
+        if(keyboard.is_pressed('w')):
+            curr = getPos(RM_LEG_ID)
+            moveLegsOffset(curr + 25)
+        
+        if(keyboard.is_pressed('s')):
+            curr = getPos(RM_LEG_ID)
+            moveLegsOffset(curr - 25)
+
+        if(keyboard.is_pressed('j')):
+            moveMotorPos(TAIL_PITCH_ID, TAIL_PITCH_DOWN)
+
+        if(keyboard.is_pressed('k')):
+            moveMotorPos(TAIL_PITCH_ID, TAIL_PITCH_IN_GROUND)
+
+        if(keyboard.is_pressed('l')):
+            moveMotorPos(TAIL_PITCH_ID, TAIL_PITCH_STRAIGHT)
+
+        if(keyboard.is_pressed(';')):
+            moveMotorPos(TAIL_PITCH_ID, TAIL_PITCH_UP)
+
+        if(keyboard.is_pressed('\'')):
+            moveMotorPos(TAIL_PITCH_ID, TAIL_PITCH_FORWARD)
+
+        
+        if(keyboard.is_pressed('o')):
+            moveWings(L_WING_OPEN, R_WING_OPEN)
+        
+        if(keyboard.is_pressed('p')):
+            moveWings(L_WING_CLOSED, R_WING_CLOSED)
+
+        if(keyboard.is_pressed('m')):
+            selfRight()
+
+        if(keyboard.is_pressed('n')):
+            rollOver()
+
+        if(keyboard.is_pressed('f')):
+            moveMotorPos(TAIL_YAW_ID, TAIL_YAW_LEFT_SMALL)
+
+        if(keyboard.is_pressed('g')):
+            moveMotorPos(TAIL_YAW_ID, TAIL_YAW_STRAIGHT)
+
+        if(keyboard.is_pressed('h')):
+            moveMotorPos(TAIL_YAW_ID, TAIL_YAW_RIGHT_SMALL)
+
 enableAll()
 
 # time.sleep(3)
 homeWings()
 homeTail()
-# homeLegs()
 offsetLegsRelative()
 
-# pain(6)
 # walkLoopSmart(10)
 # walkLoopSmartVel(10)
 # st = time.time()
@@ -312,26 +367,30 @@ offsetLegsRelative()
 # walkLoopShaking(15, RUN_PROFILE_VELOCITY)
 
 # moveTail(TAIL_PITCH_IN_GROUND, TAIL_YAW_LEFT_SMALL)
-# walkLoop(10,RUN_PROFILE_VELOCITY)
+# moveTail(TAIL_PITCH_UP, TAIL_YAW_STRAIGHT)
+# walkLoop(15,RUN_PROFILE_VELOCITY)
 
-walk(10)
-index = 0
-while not legsAtPos():
-    # pitchUp()
-    # if(wingsAtPos() and index == 0):
-    #     moveWings(L_WING_CLOSED, R_WING_CLOSED)
-    #     index = 1
-    # if(wingsAtPos() and index == 1):
-    #     moveWings(L_WING_AJAR, R_WING_AJAR)
-    #     index = 0
+# walk(10)
+# index = 0
+# while not legsAtPos():
+#     time.sleep(0.01)
+#     pitchUp()
+#     # if(wingsAtPos() and index == 0):
+#     #     moveWings(L_WING_CLOSED, R_WING_CLOSED)
+#     #     index = 1
+#     # if(wingsAtPos() and index == 1):
+#     #     moveWings(L_WING_AJAR, R_WING_AJAR)
+#     #     index = 0
 
-    if(tailAtPos() and index == 0):
-        moveTail(TAIL_PITCH_STRAIGHT, TAIL_YAW_LEFT_SMALL)
-        index = 1
-    if(tailAtPos() and index == 1):
-        moveTail(TAIL_PITCH_STRAIGHT, TAIL_YAW_RIGHT_SMALL)
-        index = 0
+#     if(tailAtPos() and index == 0):
+#         moveTail(TAIL_PITCH_STRAIGHT, TAIL_YAW_LEFT_SMALL)
+#         index = 1
+#     if(tailAtPos() and index == 1):
+#         moveTail(TAIL_PITCH_STRAIGHT, TAIL_YAW_RIGHT_SMALL)
+#         index = 0
 
+
+keyboardControl()
 
 
 disableAll()
