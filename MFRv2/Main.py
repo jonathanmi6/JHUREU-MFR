@@ -45,7 +45,7 @@ def homeLegs():
     
 def stowLegs():
     switchControlModeAllLegs(XL_POSITION_CONTROL)
-    moveLegsFromHome(2048)
+    moveLegsFromHome(1024)
     timeOut(GLOBAL_TIMEOUT, 'LEGS')
     switchControlModeAllLegs(XL_EXT_POSITION_CONTROL)
     print("Stowed Legs")
@@ -96,12 +96,12 @@ def selfRight():
             print("Timed Out")
             break
     st = time.time()
-    while not(moveTail(TAIL_PITCH_DOWN, TAIL_YAW_LEFT)):
+    while not(moveTail(TAIL_PITCH_DOWN, TAIL_YAW_STRAIGHT)):
         time.sleep(0.01)
         if(time.time() - st > GLOBAL_TIMEOUT):
             print("Timed Out")
             break
-    time.sleep(0.5)
+    shakeTail(2)
     st = time.time()
     while not(moveTail(TAIL_PITCH_STRAIGHT, TAIL_YAW_STRAIGHT)):
         time.sleep(0.01)
@@ -240,13 +240,22 @@ def pitchUp():
     moveTail(TAIL_PITCH_IN_GROUND, TAIL_YAW_STRAIGHT)
     timeOut(GLOBAL_TIMEOUT, 'TAIL')
 
-def shakeTail(wags):
+def shakeTailSmall(wags):
     print("Shaking Tail ", wags, " times")
     for i in range (wags):
         while not(moveTail(TAIL_PITCH_STRAIGHT, TAIL_YAW_LEFT_SMALL)):
             time.sleep(0.01)
         while not(moveTail(TAIL_PITCH_STRAIGHT, TAIL_YAW_RIGHT_SMALL)):
             time.sleep(0.01)
+    homeTail()
+
+def shakeTail(wags):
+    print("Shaking Tail ", wags, " times")
+    for i in range (wags):
+        moveMotorPos(TAIL_YAW_ID, TAIL_YAW_RIGHT)
+        timeOut(GLOBAL_TIMEOUT, 'TAIL')
+        moveMotorPos(TAIL_YAW_ID, TAIL_YAW_LEFT)
+        timeOut(GLOBAL_TIMEOUT, 'TAIL')
     homeTail()
 
 def rollOver():
@@ -291,24 +300,58 @@ def keyboardControl():
         if(keyboard.is_pressed('esc')):
             break
 
+        moveConst = 1200
         if(keyboard.is_pressed('w')):
-            # walk(0.1)
-            curr = getPos(LM_LEG_ID)
-            moveLegsOffset(curr + 1200)
+            # # walk(0.1)
+            # curr = getPos(LM_LEG_ID)
+            # moveLegsOffset(curr + 1200)
+            moveMotorPos(RF_LEG_ID, getPos(RF_LEG_ID) + moveConst)
+            moveMotorPos(RM_LEG_ID, getPos(RM_LEG_ID) + moveConst)
+            moveMotorPos(RB_LEG_ID, getPos(RB_LEG_ID) + moveConst)
+            moveMotorPos(LF_LEG_ID, getPos(LF_LEG_ID) + moveConst)
+            moveMotorPos(LM_LEG_ID, getPos(LM_LEG_ID) + moveConst)
+            moveMotorPos(LB_LEG_ID, getPos(LB_LEG_ID) + moveConst)
         
         if(keyboard.is_pressed('s')):
-            curr = getPos(LM_LEG_ID)
-            moveLegsOffset(curr - 1200)
-            # walk(-0.1)
+            # curr = getPos(LM_LEG_ID)
+            # moveLegsOffset(curr - 1200)
+            # # walk(-0.1)
+            moveMotorPos(RF_LEG_ID, getPos(RF_LEG_ID) - moveConst)
+            moveMotorPos(RM_LEG_ID, getPos(RM_LEG_ID) - moveConst)
+            moveMotorPos(RB_LEG_ID, getPos(RB_LEG_ID) - moveConst)
+            moveMotorPos(LF_LEG_ID, getPos(LF_LEG_ID) - moveConst)
+            moveMotorPos(LM_LEG_ID, getPos(LM_LEG_ID) - moveConst)
+            moveMotorPos(LB_LEG_ID, getPos(LB_LEG_ID) - moveConst)
 
+        turnConst = 800
+        if(keyboard.is_pressed('a')):
+            moveMotorPos(RF_LEG_ID, getPos(RF_LEG_ID) + turnConst)
+            moveMotorPos(RM_LEG_ID, getPos(RM_LEG_ID) + turnConst)
+            moveMotorPos(RB_LEG_ID, getPos(RB_LEG_ID) + turnConst)
+            moveMotorPos(LF_LEG_ID, getPos(LF_LEG_ID) - turnConst)
+            moveMotorPos(LM_LEG_ID, getPos(LM_LEG_ID) - turnConst)
+            moveMotorPos(LB_LEG_ID, getPos(LB_LEG_ID) - turnConst)
+            
+        if(keyboard.is_pressed('d')):
+            moveMotorPos(RF_LEG_ID, getPos(RF_LEG_ID) - turnConst)
+            moveMotorPos(RM_LEG_ID, getPos(RM_LEG_ID) - turnConst)
+            moveMotorPos(RB_LEG_ID, getPos(RB_LEG_ID) - turnConst)
+            moveMotorPos(LF_LEG_ID, getPos(LF_LEG_ID) + turnConst)
+            moveMotorPos(LM_LEG_ID, getPos(LM_LEG_ID) + turnConst)
+            moveMotorPos(LB_LEG_ID, getPos(LB_LEG_ID) + turnConst)
+
+        if(keyboard.is_pressed('x')):
+            offsetLegsRelative()
+
+            
         if(keyboard.is_pressed('up')):
             # walk(0.1)
             curr = getPos(LM_LEG_ID)
-            moveLegsOffset(curr + 1200)
+            moveLegsNonOffset(curr + 1200)
         
         if(keyboard.is_pressed('down')):
-            curr = getPos(LM_LEG_ID)
-            moveLegsOffset(curr - 1200)
+            curr = getPos(LM_LEG_ID) 
+            moveLegsNonOffset(curr - 1200)
             # walk(-0.1)
 
         if(keyboard.is_pressed('j')):
@@ -321,7 +364,7 @@ def keyboardControl():
             moveMotorPos(TAIL_PITCH_ID, TAIL_PITCH_STRAIGHT)
 
         if(keyboard.is_pressed(';')):
-            moveMotorPos(TAIL_PITCH_ID, TAIL_PITCH_UP)
+            moveMotorPos(TAIL_PITCH_ID, TAIL_PITCH_UP-300)
 
         if(keyboard.is_pressed('\'')):
             moveMotorPos(TAIL_PITCH_ID, TAIL_PITCH_FORWARD)
@@ -340,68 +383,46 @@ def keyboardControl():
             rollOver()
 
         if(keyboard.is_pressed('f')):
-            moveMotorPos(TAIL_YAW_ID, TAIL_YAW_LEFT_SMALL)
+            if(tailRoll == True):
+                moveMotorPos(TAIL_ROLL_ID, TAIL_ROLL_LEFT_SMALL)
+            else:
+                moveMotorPos(TAIL_YAW_ID, TAIL_YAW_LEFT_SMALL)
 
         if(keyboard.is_pressed('g')):
-            moveMotorPos(TAIL_YAW_ID, TAIL_YAW_STRAIGHT)
+            if(tailRoll == True):
+                moveMotorPos(TAIL_ROLL_ID, TAIL_ROLL_STRAIGHT)
+            else:
+                moveMotorPos(TAIL_YAW_ID, TAIL_YAW_STRAIGHT)
 
         if(keyboard.is_pressed('h')):
-            moveMotorPos(TAIL_YAW_ID, TAIL_YAW_RIGHT_SMALL)
+            if(tailRoll == True):
+                moveMotorPos(TAIL_ROLL_ID, TAIL_ROLL_RIGHT_SMALL)
+            else:
+                moveMotorPos(TAIL_YAW_ID, TAIL_YAW_RIGHT_SMALL)
+
+        if(keyboard.is_pressed(',')):
+            if(tailRoll == True):
+                moveMotorPos(TAIL_ROLL_ID, TAIL_ROLL_LEFT)
+            else:
+                moveMotorPos(TAIL_YAW_ID, TAIL_YAW_LEFT)
+
+        if(keyboard.is_pressed('.')):
+            if(tailRoll == True):
+                moveMotorPos(TAIL_ROLL_ID, TAIL_ROLL_RIGHT)
+            else:
+                moveMotorPos(TAIL_YAW_ID, TAIL_YAW_RIGHT)
+
+
+        
 
 enableAll()
 
-# time.sleep(3)
+#home everything
 homeWings()
 homeTail()
 offsetLegsRelative()
 
-# walkLoopSmart(10)
-# walkLoopSmartVel(10)
-# st = time.time()
-# switchControlModeAllLegs(XL_VELOCITY_CONTROL)
-# while not(time.time() - st > 10 ):
-#     if(time.time() - st < 5 or time.time() - st > 8):
-#         moveMotorVel(RF_LEG_ID, RUN_VELOCITY)
-#     else:
-#         moveMotorVel(RF_LEG_ID, WALK_VELOCITY)
-#     print("Time: ", time.time() - st, " Vel goal: ", getVelGoal(RF_LEG_ID), " Curr Vel: ", getVel(RF_LEG_ID), "Curr Pos: ", getPos(RF_LEG_ID)%4096)
-
-
-# disableAll()
-# while 1:
-#     if(abs(getPos(RF_LEG_ID)%4096) < SLOW_GAIT_RANGE_LOWER or abs(getPos(RF_LEG_ID)%4096) > SLOW_GAIT_RANGE_UPPER):
-#         print("walking")
-#     else:
-#         print("running")
-
-
-# walkLoop(10,RUN_PROFILE_VELOCITY)
-# walkLoopShaking(15, RUN_PROFILE_VELOCITY)
-
-# moveTail(TAIL_PITCH_IN_GROUND, TAIL_YAW_LEFT_SMALL)
-# moveTail(TAIL_PITCH_UP, TAIL_YAW_STRAIGHT)
-# walkLoop(15,RUN_PROFILE_VELOCITY)
-
-# walk(10)
-# index = 0
-# while not legsAtPos():
-#     time.sleep(0.01)
-#     pitchUp()
-#     # if(wingsAtPos() and index == 0):
-#     #     moveWings(L_WING_CLOSED, R_WING_CLOSED)
-#     #     index = 1
-#     # if(wingsAtPos() and index == 1):
-#     #     moveWings(L_WING_AJAR, R_WING_AJAR)
-#     #     index = 0
-
-#     if(tailAtPos() and index == 0):
-#         moveTail(TAIL_PITCH_STRAIGHT, TAIL_YAW_LEFT_SMALL)
-#         index = 1
-#     if(tailAtPos() and index == 1):
-#         moveTail(TAIL_PITCH_STRAIGHT, TAIL_YAW_RIGHT_SMALL)
-#         index = 0
-
-
+#enable keyboard control
 keyboardControl()
 
 

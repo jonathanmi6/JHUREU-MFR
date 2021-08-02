@@ -297,10 +297,16 @@ def enableAll():
     enableTorque(LF_LEG_ID)
     enableTorque(LM_LEG_ID)
     enableTorque(LB_LEG_ID)
-    enableTorque(TAIL_YAW_ID)
     enableTorque(TAIL_PITCH_ID)
     enableTorque(R_WING_ID)
     enableTorque(L_WING_ID)
+
+    if(tailRoll == True):
+        enableTorque(TAIL_ROLL_ID)
+    else:
+        enableTorque(TAIL_YAW_ID)
+
+
 
 def disableAll():
     disableTorque(RF_LEG_ID)
@@ -313,6 +319,11 @@ def disableAll():
     disableTorque(TAIL_YAW_ID)
     disableTorque(R_WING_ID)
     disableTorque(L_WING_ID)
+
+    if(tailRoll == True):
+        disableTorque(TAIL_ROLL_ID)
+    else:
+        disableTorque(TAIL_YAW_ID)
 
 ## for motor testing:
 
